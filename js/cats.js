@@ -15,16 +15,12 @@ const missesSpan = document.getElementById('misses');
 const triesSpan = document.getElementById('tries');
 const finalResultSpan = document.getElementById('playAgainMessage');
 
-//Variables to measure the Time
-
-let time = 0;
-let timer;
-
 // Add listener over the cards to be able to play with them
 
 cards.forEach(card => card.addEventListener('click', flipCard));
 
-// This function includes the property flips to the cards so the effect is added using the CSS
+// This function includes the property flips to the cards so the effect
+// is added using the CSS
 
 function flipCard() {
   if (lockBoard) return;
@@ -40,7 +36,9 @@ function flipCard() {
 };
 
 // This function is meant to check if both cards selected by the users have the same image.
-// If both cards are the same, the listener is erased so both cards remain flipped. If not, both cards return to the original position.
+// If both cards are the same, the listener is erased so both cards remain flipped. 
+//If not, both cards return to the original position.
+//It also counts the tries, misses and matches and capture them to show them in the web
 
 const checkMatch = () => {
   if (firstCard.dataset.framework === secondCard.dataset.framework) {
@@ -88,12 +86,16 @@ const finishGame = () => {
     overlay.style.display = 'flex';
     popup.style.display = 'flex';
     endTime = new Date().getTime();
-    endTimeHuman = msToTime(endTime)
-    finalResultSpan.textContent = `Your final result is misses: ${misses}, matches ${matches} y tries ${tries}. And the the is ${endTimeHuman}`;
+    let elapsedTime = calculateElapsedTime();
+    const elapsedTimeFormatted = msToTime(elapsedTime);
+    let finalScore = Math.round(calculateFinalScore(elapsedTime,tries));
+    finalResultSpan.textContent = `Your final result is misses: ${misses}, matches ${matches} y tries ${tries}. And the time is ${elapsedTimeFormatted}. Your final score is ${finalScore}/1000`;
   }
 };
 
+
 //Showing on and off the popup for starting the game
+// Also reseting the game after clicking in play again.
 
 const overlay = document.querySelector(".overlay");
 const popup = document.querySelector(".popup");
@@ -109,17 +111,15 @@ startBtn.addEventListener("click", () => {
 
 playAgainBtn.addEventListener("click", () => {
   overlay.style.display = "none";
-  popup.style.display = "none";
-  
-  // Reset game
-  
+  popup.style.display = "none"; 
   matches = 0;
   misses = 0;
   tries = 0;
+  startTimer();
   matchesSpan.textContent = matches;
   missesSpan.textContent = misses;
   triesSpan.textContent = tries;
-  
+
   cards.forEach
   (card => {
     card.classList.remove('flip');
@@ -132,35 +132,71 @@ overlay.style.display = "flex";
 popup.style.display = "flex";
 
 // Add timer variables
+
 let startTime;
 let timerInterval;
 const timerElement = document.getElementById("timer");
 let endTime;
+let time = 0;
+let timer;
+let elapsedTime = 0;
 
 // Update the timer
+
 function updateTimer() {
   const currentTime = new Date().getTime();
   const elapsedTime = currentTime - startTime;
   const minutes = Math.floor(elapsedTime / 60000);
   const seconds = Math.floor((elapsedTime % 60000) / 1000);
   timerElement.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
+};
 
 // Start the timer
+
 function startTimer() {
   startTime = new Date().getTime();
   timerInterval = setInterval(updateTimer, 1000);
-}
+};
 
 // Stop the timer
+
 function stopTimer() {
   clearInterval(timerInterval);
+};
+
+//calculate the elapsed time
+
+function calculateElapsedTime() {
+  const endTime = new Date().getTime();
+  return endTime - startTime;
 }
+
+
+// Misilecons translator to minutes and seconds to show it in the finnal mesage
 
 function msToTime(duration) {
   const milliseconds = parseInt((duration % 1000) / 100),
         seconds = parseInt((duration / 1000) % 60),
         minutes = parseInt((duration / (1000 * 60)) % 60);
 
-  return `${minutes}m ${seconds}s ${milliseconds}ms`;
+  return `${minutes}m ${seconds}s`;
+};
+
+//Socring system
+
+const maxTime = 60000;
+const maxTries = 12;
+const minTries = 6;
+const weightTime = 0.5;
+const weightTries = 0.5;
+
+
+function calculateFinalScore(elapsedTime, tries) {
+  let timeFactor = (maxTime - elapsedTime) / maxTime;
+  let triesFactor = 1 - ((tries - minTries) / (maxTries - minTries));
+  let finalScore = 1000 * (timeFactor * weightTime + triesFactor * weightTries);
+
+  return finalScore;
 }
+
+//more things
